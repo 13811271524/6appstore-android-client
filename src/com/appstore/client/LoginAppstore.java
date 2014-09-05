@@ -46,10 +46,10 @@ public class LoginAppstore {
 		}
 	}
 	
-	public static int login(String username,String password){
+	public static int login(String username,String deviceid,String password){
 		usr=username;
 		try {
-			mXmppConnection.login(username+"@push.6appstore.com",password);
+			mXmppConnection.login(deviceid+"@push.6appstore.com",password);
 		} catch (XMPPException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

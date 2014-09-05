@@ -5,15 +5,20 @@ package com.appstore.client;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Menu;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
+import android.provider.Settings.Secure;;
 
 public class MainActivity extends Activity {
 	TextView text;
@@ -23,10 +28,21 @@ public class MainActivity extends Activity {
 	private String password="";
 	private int isConnected=0;
 	private static final String TAG = null;
+	
+	private String androidId="";
+	private String md5Id="";
+	private static MainActivity instance;
+	private String phoneBrand="";
+	private String phoneModel="";
+	private String deviceInfo="";
 
+	public static MainActivity getMainActivityInst(){
+		return instance;
+	}
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		instance = this;
 		setContentView(R.layout.activity_main);
 		show = (WebView) findViewById(R.id.webView1);
 		show.setWebViewClient(new MyWebViewClient());
@@ -37,11 +53,32 @@ public class MainActivity extends Activity {
 		}
 		
 		isConnected=LoginAppstore.connect();
-		show.loadUrl("http://push.6appstore.com/action.php?action=tologin&did=android&type=android");
+		
+		////******show.loadUrl("http://push.6appstore.com/action.php?action=tologin&did=android&type=android");
+		//获取android_id
+		androidId = Secure.getString(getBaseContext().getContentResolver(),Secure.ANDROID_ID);
+		md5Id = MD5.getMD5(androidId.getBytes());
+		
+		//获取IMEI码
+		//TelephonyManager telephonyManager = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);  
+        //String IMEI = telephonyManager.getDeviceId();
+        //System.out.println("IMEI：" + IMEI);
+        //md5Id = MD5.getMD5(IMEI.getBytes());
+        
+		
+		//String phoneInfo = "Product: " + android.os.Build.PRODUCT;
+		phoneBrand=android.os.Build.BRAND;
+		phoneModel=android.os.Build.MODEL;
+		System.out.println(phoneBrand);
+		System.out.println(phoneModel);
+		//System.out.println(phoneInfo);
+		
+		deviceInfo=phoneBrand + phoneModel; 
+        
+		show.loadUrl("http://push.6appstore.com/action.php?action=tologin&did="+md5Id+"&type=android&dinfo="+deviceInfo);
+
 		//LoginAppstore.login("android","60e7c3af2ad09c48c1eb753b21c7e88220130529");
 		//LoginAppstore.listen();
-		
-		
 	}
 
 	@Override
@@ -51,9 +88,10 @@ public class MainActivity extends Activity {
 		return true;
 	}
 	
+	
 	@SuppressLint("SimpleDateFormat")
 	public void readUrl(String url){
-		Log.v(TAG, "--------readUrl--------");
+		Log.v(TAG, "--------readUrl-------");
 		String[] temp,temp2,urlValue;
 		if(url.equals("http://www.6auth.net/"))
 			return;
@@ -71,7 +109,8 @@ public class MainActivity extends Activity {
 	        		//Log.v(TAG, urlValue[1]);
 	    			if(urlValue[0].equals("name")){
 	    				username=urlValue[1];
-	    				deviceid="android";
+	    			    ////*****deviceid="android";
+	    				deviceid = md5Id;
 	    			}
 	    			else if(urlValue[0].equals("token"))
 	    				password=urlValue[1];
@@ -86,8 +125,8 @@ public class MainActivity extends Activity {
         SimpleDateFormat sdf=new SimpleDateFormat("yyyyMMdd");
         password=password+sdf.format(date);
         Log.v(TAG, "pwd:"+password);
-    	if(deviceid!=""&password!=""&&isConnected==1){
-    		int i=LoginAppstore.login(deviceid,password);
+    	if(deviceid!=""&&password!=""&&isConnected==1){
+    		int i=LoginAppstore.login(username,deviceid,password);
     		if(i==1){
     			setContentView(R.layout.userinfo);
     			text=(TextView) findViewById(R.id.textView4);
@@ -118,7 +157,7 @@ public class MainActivity extends Activity {
             // 当开启新的页面的时候用webview来进行处理而不是用系统自带的浏览器处理   
             // 互联网用：webView.loadUrl("http://www.google.com");    
             // 本地文件用：webView.loadUrl("file:///android_asset/XX.html");  本地文件存放   
-        	Log.v(TAG, "URL:"+url);
+        	Log.v(TAG, "URL1:"+url);
         	view.loadUrl(url);
         	readUrl(url);
             return true;  
